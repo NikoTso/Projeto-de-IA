@@ -37,7 +37,7 @@ func main() {
 		log.Fatal(err)
 	}
 
-	fmt.Println("\nResposta:", resposta)
+	fmt.Println("\nResposta: \n", resposta)
 }
 
 func CallGeminiOrMock(ctx context.Context, client *genai.Client, prompt string) (string, error) {
@@ -59,7 +59,7 @@ func CallGeminiOrMock(ctx context.Context, client *genai.Client, prompt string) 
 }
 
 func MockGeminiResponse(input string) string {
-	return "Resposta esperada: " + input
+	return "\nResposta esperada: " + input
 }
 
 func isQuotaError(err error) bool {
