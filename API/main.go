@@ -13,7 +13,7 @@ import (
 
 func main() {
 	if err := godotenv.Load(); err != nil {
-		log.Fatal("Erro carregando .env")
+		log.Fatal("Erro ao carregar o .env")
 	}
 
 	apiKey := os.Getenv("GEMINI_API_KEY")
@@ -30,7 +30,7 @@ func main() {
 		log.Fatal(err)
 	}
 
-	prompt := "Explique Go em 3 linhas"
+	prompt := "Faça uma breve apresentação"
 
 	resposta, err := CallGeminiOrMock(ctx, client, prompt)
 	if err != nil {
