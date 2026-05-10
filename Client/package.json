@@ -1,5 +1,19 @@
 {
   "dependencies": {
     "@google/generative-ai": "^0.24.1"
-  }
+  },
+  "name": "client",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "devDependencies": {
+    "cross-env": "^10.1.0"
+  },
+  "scripts": {
+    "dev": "cd api && go run main.go"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs"
 }
