@@ -30,7 +30,7 @@ func main() {
 		log.Fatal(err)
 	}
 
-	prompt := "Faça uma breve apresentação"
+	prompt := "Que dia é hoje?"
 
 	resposta, err := CallGeminiOrMock(ctx, client, prompt)
 	if err != nil {
@@ -41,7 +41,7 @@ func main() {
 }
 
 func CallGeminiOrMock(ctx context.Context, client *genai.Client, prompt string) (string, error) {
-	resp, err := client.Models.GenerateContent(ctx, "gemini-2.0-flash", genai.Text(prompt), nil)
+	resp, err := client.Models.GenerateContent(ctx, "gemini-2.5-flash", genai.Text(prompt), nil)
 
 	if err != nil {
 		if isQuotaError(err) {
