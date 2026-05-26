@@ -147,11 +147,17 @@
 #     main()
 import os
 import logging
+<<<<<<< HEAD
 import time
 import tkinter as tk
 from tkinter import filedialog
 from pathlib import Path
 from google.genai import errors
+=======
+import tkinter as tk
+from tkinter import filedialog
+from pathlib import Path
+>>>>>>> 5f66988e56e93fef06dce6ca1f67880477980f0a
 from dotenv import load_dotenv
 from google import genai
 
@@ -222,6 +228,7 @@ def selecionar_arquivo_java() -> str:#certinha
 
     return caminho
 
+<<<<<<< HEAD
 def gerar_resposta(client, contents):
     tentativas = 5
 
@@ -245,6 +252,8 @@ def gerar_resposta(client, contents):
                 raise
 
     raise Exception("Falhou após várias tentativas.")
+=======
+>>>>>>> 5f66988e56e93fef06dce6ca1f67880477980f0a
 
 def selecionar_local_saida() -> str:
     janela = tk.Tk()
