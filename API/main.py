@@ -1,64 +1,357 @@
+# import os
+# import logging
+# import argparse
+# from pathlib import Path
+# from dotenv import load_dotenv
+# from google import genai
+# from google.genai import types
+
+# logging.basicConfig(level=logging.INFO)
+# log = logging.getLogger(__name__)
+
+
+# SYSTEM_PROMPT = """Você é um revisor de código Java.
+ 
+#                 Receberá um arquivo .java. 
+#                 Sua tarefa é corrigir erros de sintaxe, organização e pequenos problemas de lógica quando forem claros.
+
+#                 Regras:
+#                 1. Devolva somente o código Java final.
+#                 2. Não use markdown.              
+#                 4. Não coloque ```java.
+#                 5. Preserve a estrutura geral do código.
+#                 6. Não invente classes, métodos ou bibliotecas desnecessárias.
+#                 7. Se houver imports faltando, adicione.
+#                 8. Se houver erros óbvios de compilação, corrija.
+#                 Siga os parametros de nota:
+#                 Você é um professor avaliador de código Java.
+
+#                 Você receberá um arquivo .java feito por um aluno.
+
+#                 Sua tarefa é:
+#                 1. Corrigir o código Java.
+#                 2. Avaliar o código original do aluno.
+#                 3. Gerar uma nota final de 0 a 10.
+#                 4. Explicar brevemente os principais erros encontrados.
+
+#                 Critérios de avaliação:
+
+#                 1. Compilação e sintaxe. Peso: 30%.
+#                 - Verifique se o código compila.
+#                 - Avalie erros de sintaxe, chaves, ponto e vírgula, imports e nomes inválidos.
+
+#                 2. Lógica e funcionamento. Peso: 30%.
+#                 - Verifique se o código resolve o problema proposto.
+#                 - Avalie erros de cálculo, condições, loops e fluxo do programa.
+
+#                 3. Organização e clareza. Peso: 20%.
+#                 - Avalie nomes de variáveis, organização dos métodos, indentação e legibilidade.
+
+#                 4. Boas práticas em Java. Peso: 10%.
+#                 - Avalie uso adequado de classes, métodos, encapsulamento, tipos e estruturas.
+
+#                 5. Tratamento de entrada e erros. Peso: 10%.
+#                 - Avalie se o código lida bem com entradas inválidas ou situações inesperadas.
+
+#                 Formato obrigatório da resposta:
+
+#                 NOTA_FINAL: número de 0 a 10
+
+#                 AVALIACAO:
+#                 - Compilação e sintaxe: nota de 0 a 10
+#                 - Lógica e funcionamento: nota de 0 a 10
+#                 - Organização e clareza: nota de 0 a 10
+#                 - Boas práticas em Java: nota de 0 a 10
+#                 - Tratamento de entrada e erros: nota de 0 a 10
+
+#                 JUSTIFICATIVA:
+#                 Explique os principais problemas encontrados no código original.
+
+#                 CODIGO_CORRIGIDO:
+#                 Devolva somente o código Java corrigido, sem markdown e sem ```java.
+                
+#                 """
+
+# def corrigir_codigo_java(client, caminho_entrada, instrucao_extra=None):
+#     codigo = Path(caminho_entrada).read_text(encoding="utf-8")
+
+#     prompt = f"""
+#             Corrija o seguinte código Java.
+
+#             Instrução extra do usuário:
+#             {instrucao_extra or "Corrija apenas os problemas necessários para o código compilar e funcionar melhor."}
+
+#             Código:
+#             {codigo}
+#             """
+
+#     resposta = client.models.generate_content(
+#         model="gemini-2.5-flash",
+#         contents=[
+#             SYSTEM_PROMPT,
+#             prompt,
+#         ],
+#     )
+
+#     return resposta.text.strip()
+# def main():
+#     if not load_dotenv():
+#         raise RuntimeError("Erro ao carregar o .env")
+
+#     api_key = os.getenv("GEMINI_API_KEY")
+#     if not api_key:
+#         raise RuntimeError("GEMINI_API_KEY não definida")
+
+#     client = genai.Client(api_key=api_key)
+
+#     prompt = input("")
+    
+#     resposta = call_gemini_or_mock(client, prompt)
+#     print("\nResposta:\n", resposta)
+
+
+# def call_gemini_or_mock(client: genai.Client, prompt: str) -> str:
+#     if not prompt or not prompt.strip():
+#         raise ValueError("O prompt não pode estar vazio")
+
+#     try:
+#         resp = client.models.generate_content(
+#             model="gemini-2.5-flash",
+#             contents=prompt,
+#         )
+
+#         if not resp.candidates:
+#             raise RuntimeError("A API retornou com sucesso, entretanto nenhum conteúdo foi retornado")
+
+#         return resp.text
+
+#     except Exception as e:
+#         if is_quota_error(e):
+#             log.warning("\nN° máximo de Quota excedida")
+#             return mock_gemini_response(prompt)
+#         raise RuntimeError(f"Erro na API: {e}") from e
+
+
+# def mock_gemini_response(input_text: str) -> str:
+#     return "\nResposta esperada: " + input_text
+
+
+# def is_quota_error(err: Exception) -> bool:
+#     if err is None:
+#         return False
+#     msg = str(err)
+#     return "429" in msg or "TooManyRequests" in msg
+
+
+# if __name__ == "__main__":
+#     main()
 import os
 import logging
+import time
+import tkinter as tk
+from tkinter import filedialog
+from pathlib import Path
+from google.genai import errors
 from dotenv import load_dotenv
 from google import genai
-from google.genai import types
-
-logging.basicConfig(level=logging.INFO)
-log = logging.getLogger(__name__)
 
 
-SYSTEM_PROMPT = """Você é uma assistente tecnico especializado em Python" 
-                
-                """
+SYSTEM_PROMPT = """
+Você é um professor avaliador de código Java.
 
-def main():
-    if not load_dotenv():
-        raise RuntimeError("Erro ao carregar o .env")
+Você receberá um código Java feito por um aluno.
 
-    api_key = os.getenv("GEMINI_API_KEY")
-    if not api_key:
-        raise RuntimeError("GEMINI_API_KEY não definida")
+Sua tarefa é:
+1. Corrigir o código Java.
+2. Avaliar o código original do aluno.
+3. Dar uma nota final de 0 a 10.
+4. Explicar brevemente os erros encontrados.
 
-    client = genai.Client(api_key=api_key)
+Critérios de avaliação:
 
-    prompt = input("")
-    
-    resposta = call_gemini_or_mock(client, prompt)
-    print("\nResposta:\n", resposta)
+1. Compilação e sintaxe. Peso: 30%.
+Avalie se o código compila corretamente.
+Considere erros de chaves, ponto e vírgula, nomes incorretos, imports ausentes e estrutura da classe.
+
+2. Lógica e funcionamento. Peso: 30%.
+Avalie se o código resolve corretamente o problema proposto.
+Considere cálculos, condições, laços, entrada de dados e saída esperada.
+
+3. Organização e clareza. Peso: 20%.
+Avalie indentação, nomes de variáveis, clareza, organização dos métodos e facilidade de leitura.
+
+4. Boas práticas em Java. Peso: 10%.
+Avalie uso correto de classes, métodos, tipos, Scanner, modificadores e estruturas da linguagem.
+
+5. Tratamento de entrada e erros. Peso: 10%.
+Avalie se o código trata entradas inválidas, casos extremos ou possíveis erros de execução.
+
+Formato obrigatório da resposta:
+
+NOTA_FINAL: número de 0 a 10
+
+METRICAS:
+- Compilação e sintaxe: nota de 0 a 10
+- Lógica e funcionamento: nota de 0 a 10
+- Organização e clareza: nota de 0 a 10
+- Boas práticas em Java: nota de 0 a 10
+- Tratamento de entrada e erros: nota de 0 a 10
+
+JUSTIFICATIVA:
+Explique de forma breve os principais erros encontrados no código original.
+
+CODIGO_CORRIGIDO:
+Coloque aqui somente o código Java corrigido.
+Não use markdown.
+Não use ```java.
+"""
+def selecionar_arquivo_java() -> str:#certinha
+    janela = tk.Tk()
+    janela.withdraw()
+
+    caminho = filedialog.askopenfilename(
+        title="Selecione o código Java do aluno",
+        filetypes=[
+            ("Arquivos Java", "*.java"),
+            ("Todos os arquivos", "*.*"),
+        ],
+    )
+
+    if not caminho:
+        raise ValueError("Nenhum arquivo foi selecionado")
+
+    return caminho
+
+def gerar_resposta(client, contents):
+    tentativas = 5
+
+    for tentativa in range(tentativas):
+        try:
+            resposta = client.models.generate_content(
+                model="gemini-2.5-flash",
+                contents=contents
+            )
+
+            return resposta
+
+        except errors.APIError as e:
+            print(f"Erro da API: {e}")
+
+            # verifica se é 503
+            if "503" in str(e):
+                print("Modelo sobrecarregado. Tentando novamente...")
+                time.sleep(5)
+            else:
+                raise
+
+    raise Exception("Falhou após várias tentativas.")
+
+def selecionar_local_saida() -> str:
+    janela = tk.Tk()
+    janela.withdraw()
+
+    caminho = filedialog.asksaveasfilename(
+        title="Salvar avaliação como",
+        defaultextension=".txt",
+        filetypes=[
+            ("Arquivo de texto", "*.txt"),
+            ("Todos os arquivos", "*.*"),
+        ],
+    )
+
+    if not caminho:
+        raise ValueError("Nenhum local de saída foi selecionado")
+
+    return caminho
 
 
-def call_gemini_or_mock(client: genai.Client, prompt: str) -> str:
-    if not prompt or not prompt.strip():
-        raise ValueError("O prompt não pode estar vazio")
+def corrigir_codigo_java(
+    client: genai.Client,
+    caminho_entrada: str,
+    enunciado: str = "",
+    instrucao_extra: str | None = None
+) -> str:
+    codigo = Path(caminho_entrada).read_text(encoding="utf-8")
 
-    try:
-        resp = client.models.generate_content(
-            model="gemini-2.5-flash",
-            contents=prompt,
-        )
+    prompt = f"""
+Corrija e avalie o seguinte código Java.
 
-        if not resp.candidates:
-            raise RuntimeError("A API retornou com sucesso, entretanto nenhum conteúdo foi retornado")
+Enunciado da atividade:
+{enunciado or "O enunciado não foi informado. Avalie a lógica aparente do código."}
 
-        return resp.text
+Instrução extra do usuário:
+{instrucao_extra or "Corrija os erros necessários e avalie o código do aluno com base nas métricas definidas."}
 
-    except Exception as e:
-        if is_quota_error(e):
-            log.warning("\nN° máximo de Quota excedida")
-            return mock_gemini_response(prompt)
-        raise RuntimeError(f"Erro na API: {e}") from e
+Código do aluno:
+{codigo}
+"""
+
+    resposta = client.models.generate_content(
+        model="gemini-2.0-flash",
+        contents=[
+            SYSTEM_PROMPT,
+            prompt,
+        ],
+    )
+
+    return resposta.text.strip()
+
+
+def is_quota_error(err: Exception) -> bool:
+    if err is None:
+        return False
+
+    msg = str(err)
+    return "429" in msg or "TooManyRequests" in msg
 
 
 def mock_gemini_response(input_text: str) -> str:
     return "\nResposta esperada: " + input_text
 
 
-def is_quota_error(err: Exception) -> bool:
-    if err is None:
-        return False
-    msg = str(err)
-    return "429" in msg or "TooManyRequests" in msg
+def main():
+    if not load_dotenv():
+        raise RuntimeError("Erro ao carregar o .env")
+
+    api_key = os.getenv("GEMINI_API_KEY")
+
+    if not api_key:
+        raise RuntimeError("GEMINI_API_KEY não definida")
+
+    client = genai.Client(api_key=api_key)
+
+    caminho_entrada = selecionar_arquivo_java()
+    caminho_saida = selecionar_local_saida()
+
+    enunciado = input("Digite o enunciado da atividade: ").strip()
+
+    arquivo_entrada = Path(caminho_entrada)
+
+    if not arquivo_entrada.exists():
+        raise FileNotFoundError(f"Arquivo não encontrado: {arquivo_entrada}")
+
+    if arquivo_entrada.suffix != ".java":
+        raise ValueError("O arquivo de entrada precisa ser .java")
+
+    try:
+        resposta = corrigir_codigo_java(
+            client=client,
+            caminho_entrada=caminho_entrada,
+            enunciado=enunciado,
+        )
+
+    except Exception as e:
+        if is_quota_error(e):
+            logging.warning("\nO máximo de quota foi excedido")
+            resposta = mock_gemini_response("Não foi possível chamar a API agora.")
+        else:
+            raise RuntimeError(f"Erro na API: {e}") from e
+
+    Path(caminho_saida).write_text(resposta, encoding="utf-8")
+
+    print("\nAvaliação gerada com sucesso.")
+    print(f"Arquivo analisado: {caminho_entrada}")
+    print(f"Resultado salvo em: {caminho_saida}")
 
 
 if __name__ == "__main__":
