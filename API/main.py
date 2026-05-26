@@ -1,55 +1,60 @@
 import os
+import logging
 from dotenv import load_dotenv
 from google import genai
+from google.genai import types
 
-
-def mock_gemini_response(user_input):
-    return f"\nResposta esperada: {user_input}"
-
-
-def is_quota_error(error):
-    error_str = str(error)
-    return "429" in error_str or "TooManyRequests" in error_str
-
-
-def call_gemini_or_mock(client, prompt):
-    try:
-        response = client.models.generate_content(
-            model="gemini-2.5-flash",
-            contents=prompt
-        )
-
-        if not response.text:
-            raise Exception(
-                "A API retornou com sucesso, entretanto nenhum conteúdo foi retornado"
-            )
-
-        return response.text
-
-    except Exception as error:
-        if is_quota_error(error):
-            print("Quota máxima excedida")
-            return mock_gemini_response(prompt)
-
-        raise Exception(f"Erro na API: {error}")
+logging.basicConfig(level=logging.INFO)
+log = logging.getLogger(__name__)
 
 
 def main():
-    load_dotenv()
+    if not load_dotenv():
+        raise RuntimeError("Erro ao carregar o .env")
 
     api_key = os.getenv("GEMINI_API_KEY")
-
     if not api_key:
-        raise Exception("GEMINI_API_KEY não definida")
+        raise RuntimeError("GEMINI_API_KEY não definida")
 
     client = genai.Client(api_key=api_key)
 
-    prompt = "Hoje é que dia?"
+    prompt = input("Olá qual é a sua duvida de hoje? \n ")
 
     resposta = call_gemini_or_mock(client, prompt)
+    print("\nResposta:\n", resposta)
 
-    print("\nResposta:\n")
-    print(resposta)
+
+def call_gemini_or_mock(client: genai.Client, prompt: str) -> str:
+    if not prompt or not prompt.strip():
+        raise ValueError("O prompt não pode estar vazio")
+
+    try:
+        resp = client.models.generate_content(
+            model="gemini-2.5-flash",
+            contents=prompt,
+        )
+
+        if not resp.candidates:
+            raise RuntimeError("A API retornou com sucesso, entretanto nenhum conteúdo foi retornado")
+
+        return resp.text
+
+    except Exception as e:
+        if is_quota_error(e):
+            log.warning("\nN° máximo de Quota excedida")
+            return mock_gemini_response(prompt)
+        raise RuntimeError(f"Erro na API: {e}") from e
+
+
+def mock_gemini_response(input_text: str) -> str:
+    return "\nResposta esperada: " + input_text
+
+
+def is_quota_error(err: Exception) -> bool:
+    if err is None:
+        return False
+    msg = str(err)
+    return "429" in msg or "TooManyRequests" in msg
 
 
 if __name__ == "__main__":
