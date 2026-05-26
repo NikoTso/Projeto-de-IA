@@ -8,6 +8,10 @@ logging.basicConfig(level=logging.INFO)
 log = logging.getLogger(__name__)
 
 
+SYSTEM_PROMPT = """Você é uma assistente tecnico especializado em Python" 
+                
+                """
+
 def main():
     if not load_dotenv():
         raise RuntimeError("Erro ao carregar o .env")
@@ -18,8 +22,8 @@ def main():
 
     client = genai.Client(api_key=api_key)
 
-    prompt = input("Olá qual é a sua duvida de hoje? \n ")
-
+    prompt = input("")
+    
     resposta = call_gemini_or_mock(client, prompt)
     print("\nResposta:\n", resposta)
 
